@@ -70,18 +70,31 @@ def encode_L2_Q(data):
 
 
 def get_edc_ecc(data):
-    assert len(data) == 0x818
-    edc = crc32(data[0x10:0x818])
+    #  -data- is a string of bytes:
+    #  12-byte sync
+    #  4-byte address and flag
+    #  2048-bytes program data.
+    #  The following will be added to -data-:
+    #  4 byte EDC, 8 byte zero field, 276 ECC
+
+    assert len(data) == 0x810
+    edc = crc32(data[0x00:0x810])  # 4-byte EDC
+
     for _ in xrange(4):
-        data += chr(edc & 0xFF)
-        edc >>= 8
-    assert len(data) == 0x81c
-    assert len(data)-12 == 0x810
-    temp = encode_L2_P("".join(map(chr, [0, 0, 0, 0])) + data[0x10:])
+        data += chr(edc & 0xFF)  # Add least byte of EDC to -data-.
+        edc >>= 8                # Remove least byte from the EDC variable.
+    assert len(data) == 0x814    # -data- should now include the EDC
+
+    data += chr(0)*8
+    temp = encode_L2_P(data[0x0C:])
     temp = encode_L2_Q(temp)
+
+    # Add 276 byte ECC to data.
     data += "".join(map(chr, temp[-0x114:]))
     assert len(data) == 0x930
-    return data[0x818:0x81c], data[0x81c:]
+
+    # Return EDC, ECC, data
+    return data[0x810:0x814], data[0x81C:], data
 
 
 def get_edc_form2(data):
