@@ -2,12 +2,12 @@
 
 # Script for splitting out data from mode 1 2352 data tracks.
 # Input files: (source.iso)
-# Output files: (split.bin, headers.txt)
+# Output files: (split.bin, sync.txt)
 #
 # -Outline-
 # Reads chunks of 16 bytes and checks if the first 12 bytes are a sync pattern.
 # If so:
-#     Write byte index the pattern begins on to headers.txt. Write space and header bytes. Write newline.
+#     Write byte index the sync pattern begins on to sync.txt. Write newline.
 #     Read next 2048 characters from source, write to split.bin.
 #     Read and skip the next 288 bytes.
 #
@@ -16,22 +16,22 @@ import argparse
 parser = argparse.ArgumentParser(description='Splits data out of iso mode-1 2352 data tracks.')
 parser.add_argument('source', nargs='?', help='Input binary data. (Default: source.iso)')
 parser.add_argument('split', nargs='?', help='Output binary data. (Default: split.bin)')
-parser.add_argument('headers', nargs='?', help='Sync location, Header (Default: headers.txt)')
+parser.add_argument('sync', nargs='?', help='Sync locations. (Default: sync.txt)')
 args = parser.parse_args()
 
 filename1 = 'source.iso'
 filename2 = 'split.bin'
-filename3 = 'headers.txt'
+filename3 = 'sync.txt'
 if args.source:
     filename1 = args.source
 if args.split:
     filename2 = args.split
-if args.headers:
-    filename3 = args.headers
+if args.sync:
+    filename3 = args.sync
 
 sourcefile = open(filename1, 'rb')
 splitfile = open(filename2, 'wb')
-headerfile = open(filename3, 'w')
+syncfile = open(filename3, 'w')
 
 byteindex = [0]
 lastbytes = ['Bytes']
@@ -59,10 +59,8 @@ while lastbytes[0]:  # Read bytes until no byte is read.
 
     bytestr = readbytes(16)
     if bytestr[:12] == syncpattern:
-        headerfile.write(str(byteindex[0]-16) + ' ')
-        header = str((256**3 * ord(bytestr[-4])) + (256 ** 2 * ord(bytestr[-3])) + (256 * ord(bytestr[-2])) + ord(bytestr[-1]))
-        print byteindex[0]-16, ' ', header
-        headerfile.write(header + '\n')
+        syncfile.write(str(byteindex[0]-16) + '\n')
+        print byteindex[0]-16
         bytestr = readbytes(2048)
         for b in bytestr:
             splitfile.write(b)
