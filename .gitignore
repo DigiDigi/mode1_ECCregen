@@ -1,1 +1,4 @@
 *.pyc
+*.bin
+*.iso
+headers.txt
