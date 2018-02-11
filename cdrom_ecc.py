@@ -1,9 +1,5 @@
 from cdrom_ecc_tables import EDC_crctable, L2sq
 
-# unused CRC polynomials
-#POLYNOMIAL = 0x04C11DB7  # standard
-#POLYNOMIAL = 0x8001801b  # cd-rom xa mode 2??
-
 
 def crc32(data):
     result = 0
@@ -95,13 +91,3 @@ def get_edc_ecc(data):
 
     # Return EDC, ECC, data
     return data[0x810:0x814], data[0x81C:], data
-
-
-def get_edc_form2(data):
-    assert len(data) == 0x91C
-    edc = crc32(data)
-    for _ in xrange(4):
-        data += chr(edc & 0xFF)
-        edc >>= 8
-    assert len(data) == 0x920
-    return data[-4:]
