@@ -72,4 +72,4 @@ while lastbytes[0]:  # Read bytes until no byte is read.
 print 'Done.'
 sourcefile.close()
 splitfile.close()
-headerfile.close()
+syncfile.close()
