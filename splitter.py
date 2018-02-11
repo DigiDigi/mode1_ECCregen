@@ -5,15 +5,12 @@
 # Output files: (split.bin, headers.txt)
 #
 # -Outline-
-# Reads each byte from the source file into a list.
-# When it has taken 16 bytes, checks if the first 12 bytes is a sync pattern.
+# Reads chunks of 16 bytes and checks if the first 12 bytes are a sync pattern.
 # If so:
 #     Write byte index the pattern begins on to headers.txt. Write space and header bytes. Write newline.
 #     Read next 2048 characters from source, write to split.bin.
 #     Read and skip the next 288 bytes.
 #
-# -Note-
-# Extremely slow.
 
 import argparse
 parser = argparse.ArgumentParser(description='Splits data out of iso mode-1 2352 data tracks.')
@@ -37,53 +34,40 @@ splitfile = open(filename2, 'wb')
 headerfile = open(filename3, 'w')
 
 byteindex = [0]
-lastbyte = [None]
-bytelist = []
-syncpattern = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
+lastbytes = ['Bytes']
+syncpattern_list = [0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00]
+syncpattern = ''
+for i in xrange(len(syncpattern_list)):
+    syncpattern = syncpattern + chr(syncpattern_list[i])
 
 
-def readbyte(num=1):
-    for n in xrange(num):
-        newbyte = sourcefile.read(1)
-        bytelist.append(newbyte)
-        lastbyte[0] = newbyte
-        byteindex[0] += 1
+def readbytes(num=1):
+    newbyte = sourcefile.read(num)
+    lastbytes[0] = newbyte
+    byteindex[0] += num
+    return newbyte
 
 
-def clearlist(lst, num, ind=0):
-    for n in xrange(num):
-        lst.pop(ind)
+def skipbytes(num=1):
+    sourcefile.read(num)
+    byteindex[0] += num
 
 
-readbyte()
-
-counter = 0
-while lastbyte[0]:  # Read bytes until no byte is read.
+counter = 0  # For checking if still alive.
+while lastbytes[0]:  # Read bytes until no byte is read.
     counter += 1
-    if len(bytelist) == 16:
-        ordlist = []
-        for byte in bytelist:
-            ordlist.append(ord(byte))
-        if ordlist[:12] == syncpattern:
-            headerfile.write(str(byteindex[0]-16) + ' ')
 
-            header = str((256**3 * ordlist[-4]) + (256 ** 2 * ordlist[-3]) + (256 * ordlist[-2]) + ordlist[-1])
+    bytestr = readbytes(16)
+    if bytestr[:12] == syncpattern:
+        headerfile.write(str(byteindex[0]-16) + ' ')
+        header = str((256**3 * ord(bytestr[-4])) + (256 ** 2 * ord(bytestr[-3])) + (256 * ord(bytestr[-2])) + ord(bytestr[-1]))
+        print byteindex[0]-16, ' ', header
+        headerfile.write(header + '\n')
+        bytestr = readbytes(2048)
+        for b in bytestr:
+            splitfile.write(b)
+        skipbytes(288)
 
-            print byteindex[0]-16, ' ', header
-
-            headerfile.write(header + '\n')
-
-            clearlist(bytelist, 16)
-            readbyte(2048)
-            for b in bytelist:
-                splitfile.write(b)
-            readbyte(288)
-            clearlist(bytelist, 2336)
-
-        else:
-            # Remove the bytes from the list.
-            clearlist(bytelist, 16)
-    readbyte()
     if counter % 10000000 == 0:
         print 'Reading..'
 
