@@ -3,6 +3,8 @@
 # Copy source.iso and apply a patch to it.
 # source.iso, patchfile.txt, sync.txt -> apply_patch.py -> patched.iso
 
+# WIP
+
 import argparse
 import shutil
 import cdrom_ecc
