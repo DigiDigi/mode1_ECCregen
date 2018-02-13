@@ -39,11 +39,12 @@ while originalbyte:
     originalbyte = originalfile.read(1)
     modifiedbyte = modifiedfile.read(1)
     if originalbyte != modifiedbyte:
+        if not pf_flag:
+            patchfile.write(str(pf_byteindex) + ' ')
+            pf_flag = True
         pf_string = pf_string + modifiedbyte
-        pf_flag = True
     else:
         if pf_flag:
-            patchfile.write(str(pf_byteindex) + ' ')
             for eachbyte in pf_string:
                 patchfile.write(hex(ord(eachbyte))[2:])
             patchfile.write('\n')
