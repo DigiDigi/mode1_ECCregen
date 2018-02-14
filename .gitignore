@@ -1,5 +1,6 @@
 *.pyc
 *.bin
 *.iso
+*.cue
 sync.txt
 patchfile.txt
